@@ -1,10 +1,10 @@
 package binchunk
 
 type header struct {
-	signature       []byte
+	signature       [4]byte
 	version         byte
 	format          byte
-	luacData        []byte
+	luacData        [6]byte
 	cintSize        byte
 	sizetSize       byte
 	instructionSize byte
@@ -15,40 +15,37 @@ type header struct {
 }
 
 //函数基本信息
-type ProtoType struct {
+type Prototype struct {
 	//函数源文件名
 	Source string
 	//开始行号
-	LineDefined string
+	LineDefined uint32
 	//终止行号
-	LastLineDefined string
+	LastLineDefined uint32
 	//固定参数个数
-	NumParams string
+	NumParams byte
 	//是否是vararg 变长函数
 	IsVararg byte
 	//寄存器数量
-	MaxStackSize byte
-	Code         []uint32
-	Constants    []interface{}
-	UpValues     []UpValue
-	Protos       []*ProtoType
-	LineInfo     []uint32
-	LocalVars    []LocalVar
-	UpValueNames []string
+	MaxStackSize  byte
+	Code          []uint32
+	Constants     []interface{}
+	UpValues      []UpValue
+	SubPrototypes []*Prototype
+	LineInfo      []uint32
+	LocalVars     []LocalVar
+	UpValueNames  []string
 }
 
 type UpValue struct {
-	Instack byte
+	InStack byte
 	Idx     byte
 }
 
 type LocalVar struct {
-	//变量名
-	VarName string
-	//开始指令索引
-	StartPC uint32
-	//终止指令索引
-	EndPC uint32
+	VarName string //变量名
+	StartPC uint32 //开始指令索引
+	EndPC   uint32 //终止指令索引
 }
 
 const (
@@ -60,9 +57,9 @@ const (
 	TAG_LONG_STR  = 0x14
 )
 
-func UnDump(data []byte) *ProtoType {
+func UnDump(data []byte) *Prototype {
 	reader := &reader{data}
 	reader.checkHeader()
 	reader.readByte()
-	return reader.readProto("")
+	return reader.readPrototype("")
 }
