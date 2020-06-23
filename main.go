@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/djghostghost/go-lua/binchunk"
+	"github.com/djghostghost/go-lua/vm"
 	"io/ioutil"
 	"os"
 )
@@ -48,9 +49,13 @@ func printCode(f *binchunk.Prototype) {
 	for pc, c := range f.Code {
 		line := "-"
 		if len(f.LineInfo) > 0 {
-			line = fmt.Sprintf("")
+			line = fmt.Sprintf("%d", f.LineInfo[pc])
 		}
-		fmt.Printf("\t%d\t[%s]\t0x%08X\n", pc+1, line, c)
+
+		i := vm.Instruction(c)
+
+		fmt.Printf("\t%d\t[%s]\t%s\t", pc+1, line, i.OpName())
+		fmt.Printf("\n")
 	}
 }
 
