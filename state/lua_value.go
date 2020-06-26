@@ -1,6 +1,8 @@
 package state
 
-import "github.com/djghostghost/go-lua/api"
+import (
+	"github.com/djghostghost/go-lua/api"
+)
 
 type luaValue interface{}
 
