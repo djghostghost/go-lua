@@ -1,6 +1,7 @@
 package state
 
 import (
+	. "github.com/djghostghost/go-lua/api"
 	"github.com/djghostghost/go-lua/number"
 	"math"
 )
@@ -51,4 +52,44 @@ var operators = []operator{
 	{shr, nil},
 	{iunm, funm},
 	{bnot, nil},
+}
+
+func (s *luaState) Arith(op ArithOp) {
+	var a, b luaValue
+	b = s.stack.pop()
+	if op != LUA_OPUNM && op != LUA_OPBNOT {
+		a = s.stack.pop()
+	}
+
+	operator := operators[op]
+	if result := _arith(a, b, operator); result != nil {
+		s.stack.push(result)
+	} else {
+		panic("arithmetic error!")
+	}
+}
+
+func _arith(a, b luaValue, op operator) luaValue {
+	if op.floatFunc == nil {
+		if x, ok := convertToInteger(a); ok {
+			if y, ok := convertToInteger(b); ok {
+				return op.integerFunc(x, y)
+			}
+		}
+	} else {
+		if op.integerFunc != nil {
+			if x, ok := a.(int64); ok {
+				if y, ok := b.(int64); ok {
+					return op.integerFunc(x, y)
+				}
+			}
+		}
+
+		if x, ok := convertToFloat(a); ok {
+			if y, ok := convertToFloat(b); ok {
+				return op.floatFunc(x, y)
+			}
+		}
+	}
+	return nil
 }
