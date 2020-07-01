@@ -39,6 +39,10 @@ func (s *luaState) Replace(idx int) {
 // 将栈顶弹出 然后插入指定位置
 func (s *luaState) Insert(idx int) {
 	s.Rotate(idx, -1)
+}
+
+func (s *luaState) Remove(idx int) {
+	s.Rotate(idx, -1)
 	s.Pop(1)
 }
 

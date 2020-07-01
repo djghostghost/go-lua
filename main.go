@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"github.com/djghostghost/go-lua/api"
 	"github.com/djghostghost/go-lua/binchunk"
+	"github.com/djghostghost/go-lua/state"
 	"github.com/djghostghost/go-lua/vm"
 	"io/ioutil"
 	"os"
@@ -10,22 +12,35 @@ import (
 
 func main() {
 
+	var luacFile string
 	if len(os.Args) > 1 {
-		data, err := ioutil.ReadFile(os.Args[1])
-		if err != nil {
-			panic(err)
-		}
-		prototype := binchunk.UnDump(data)
-		list(prototype)
+		luacFile = os.Args[1]
+	} else {
+		luacFile = "./luac.out"
 	}
+
+	data, err := ioutil.ReadFile(luacFile)
+	if err != nil {
+		panic(err)
+	}
+	prototype := binchunk.UnDump(data)
+	luaMain(prototype)
 }
 
-func list(f *binchunk.Prototype) {
-	printHeader(f)
-	printCode(f)
-	printDetail(f)
-	for _, p := range f.SubPrototypes {
-		list(p)
+func luaMain(prototype *binchunk.Prototype) {
+	nRegs := int(prototype.MaxStackSize)
+	ls := state.New(nRegs+8, prototype)
+	ls.SetTop(nRegs)
+	for {
+		pc := ls.PC()
+		inst := vm.Instruction(ls.Fetch())
+		if inst.OpCode() != vm.OP_RETURN {
+			inst.Execute(ls)
+			fmt.Printf("[%02d] %s ", pc+1, inst.OpName())
+			printStack(ls)
+		} else {
+			break
+		}
 	}
 }
 
@@ -101,4 +116,22 @@ func upValueName(f *binchunk.Prototype, idx int) string {
 		return f.UpValueNames[idx]
 	}
 	return "-"
+}
+
+func printStack(ls api.LuaState) {
+	top := ls.GetTop()
+	for i := 1; i <= top; i++ {
+		t := ls.Type(i)
+		switch t {
+		case api.LUA_TBOOLEAN:
+			fmt.Printf("[%t]", ls.ToBoolean(i))
+		case api.LUA_TNUMBER:
+			fmt.Printf("[%g]", ls.ToNumber(i))
+		case api.LUA_TSTRING:
+			fmt.Printf("[%q]", ls.ToString(i))
+		default:
+			fmt.Printf("[%s]", ls.TypeName(t))
+		}
+	}
+	fmt.Println()
 }
