@@ -54,9 +54,12 @@ type LuaState interface {
 	GetTable(idx int) LuaType
 	GetField(idx int, k string) LuaType
 	GetI(idx int, i int64) LuaType
-	/* Set Functions */
 
+	/* Set Functions */
 	SetTable(idx int)
 	SetField(idx int, k string)
 	SetI(idx int, n int64)
+
+	Load(chunk []byte, chunkName, mode string) int
+	Call(nArgs, nResults int)
 }
