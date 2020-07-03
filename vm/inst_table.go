@@ -46,4 +46,14 @@ func setList(i Instruction, vm LuaVM) {
 		vm.PushValue(a + j)
 		vm.SetI(a, idx)
 	}
+
+	bIsZero := b == 0
+	if bIsZero {
+		for j := vm.RegisterCount() + 1; j <= vm.GetTop(); j++ {
+			idx++
+			vm.PushValue(j)
+			vm.SetI(a, idx)
+		}
+		vm.SetTop(vm.RegisterCount())
+	}
 }

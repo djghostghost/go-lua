@@ -1,21 +1,21 @@
 package state
 
 func (s *luaState) PC() int {
-	return s.pc
+	return s.stack.pc
 }
 
 func (s *luaState) AddPC(n int) {
-	s.pc += n
+	s.stack.pc += n
 }
 
 func (s *luaState) Fetch() uint32 {
-	i := s.proto.Code[s.pc]
-	s.pc++
+	i := s.stack.closure.proto.Code[s.stack.pc]
+	s.stack.pc++
 	return i
 }
 
 func (s *luaState) GetConst(idx int) {
-	c := s.proto.Constants[idx]
+	c := s.stack.closure.proto.Constants[idx]
 	s.stack.push(c)
 }
 
@@ -25,4 +25,22 @@ func (s *luaState) GetRK(rk int) {
 	} else { //Register
 		s.PushValue(rk + 1)
 	}
+}
+
+func (s *luaState) RegisterCount() int {
+	return int(s.stack.closure.proto.MaxStackSize)
+}
+
+func (s *luaState) LoadVararg(n int) {
+	if n < 0 {
+		n = len(s.stack.varargs)
+	}
+	s.stack.check(n)
+	s.stack.pushN(s.stack.varargs, n)
+}
+
+func (s *luaState) LoadProto(idx int) {
+	proto := s.stack.closure.proto.SubPrototypes[idx]
+	closure := newLuaClosure(proto)
+	s.stack.push(closure)
 }
