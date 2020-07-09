@@ -62,6 +62,10 @@ type LuaState interface {
 
 	Load(chunk []byte, chunkName, mode string) int
 	Call(nArgs, nResults int)
+
+	PushGoFunction(f GoFunction)
+	IsGoFunction(idx int) bool
+	ToGoFunction(idx int) bool
 }
 
 type GoFunction func(LuaState) int
