@@ -1,7 +1,8 @@
 package state
 
 type luaState struct {
-	stack *luaStack
+	registry *luaTable
+	stack    *luaStack
 }
 
 func New() *luaState {

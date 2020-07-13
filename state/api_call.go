@@ -1,7 +1,6 @@
 package state
 
 import (
-	"fmt"
 	"github.com/djghostghost/go-lua/binchunk"
 	"github.com/djghostghost/go-lua/vm"
 )
@@ -17,8 +16,12 @@ func (s *luaState) Load(chunk []byte, chunkName, mode string) int {
 func (s *luaState) Call(nArgs, nResults int) {
 	val := s.stack.get(-(nArgs + 1))
 	if c, ok := val.(*closure); ok {
-		fmt.Printf("call %s<%d,%d>\n", c.proto.Source, c.proto.LineDefined, c.proto.LastLineDefined)
-		s.callLuaClosure(nArgs, nResults, c)
+		if c.proto != nil {
+			s.callLuaClosure(nArgs, nResults, c)
+		} else {
+			s.callGoClosure(nArgs, nResults, c)
+		}
+
 	} else {
 		panic("not function!")
 	}
@@ -48,6 +51,17 @@ func (s *luaState) callLuaClosure(nArgs, nResults int, c *closure) {
 		s.stack.check(len(results))
 		s.stack.pushN(results, nResults)
 	}
+}
+
+func (s *luaState) CallGoClosure(nArgs, nResults int, c *closure) {
+	newStack := newLuaStack(nArgs + 20)
+	newStack.closure = c
+
+	args := s.stack.popN(nArgs)
+	newStack.pushN(args, nArgs)
+	s.stack.pop()
+
+	s.stack.
 }
 
 func (s *luaState) runLuaClosure() {
