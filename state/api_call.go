@@ -53,7 +53,7 @@ func (s *luaState) callLuaClosure(nArgs, nResults int, c *closure) {
 	}
 }
 
-func (s *luaState) CallGoClosure(nArgs, nResults int, c *closure) {
+func (s *luaState) callGoClosure(nArgs, nResults int, c *closure) {
 	newStack := newLuaStack(nArgs + 20)
 	newStack.closure = c
 
@@ -61,7 +61,17 @@ func (s *luaState) CallGoClosure(nArgs, nResults int, c *closure) {
 	newStack.pushN(args, nArgs)
 	s.stack.pop()
 
-	s.stack.
+	s.pushLuaStack(newStack)
+	r := c.goFunc(s)
+	s.popLuaStack()
+
+	if nResults != 0 {
+		results := newStack.popN(r)
+
+		s.stack.check(len(results))
+		s.stack.pushN(results, nResults)
+	}
+
 }
 
 func (s *luaState) runLuaClosure() {

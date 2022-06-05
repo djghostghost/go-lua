@@ -65,7 +65,7 @@ type LuaState interface {
 
 	PushGoFunction(f GoFunction)
 	IsGoFunction(idx int) bool
-	ToGoFunction(idx int) bool
+	ToGoFunction(idx int) GoFunction
 }
 
 type GoFunction func(LuaState) int

@@ -124,6 +124,22 @@ func (s *luaState) ToString(idx int) string {
 	return str
 }
 
+func (s *luaState) IsGoFunction(idx int) bool {
+	val := s.stack.get(idx)
+	if c, ok := val.(*closure); ok {
+		return c.goFunc != nil
+	}
+	return false
+}
+
+func (s *luaState) ToGoFunction(idx int) GoFunction {
+	val := s.stack.get(idx)
+	if c, ok := val.(*closure); ok {
+		return c.goFunc
+	}
+	return nil
+}
+
 func convertToFloat(val luaValue) (float64, bool) {
 	switch x := val.(type) {
 	case float64:

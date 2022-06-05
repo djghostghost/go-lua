@@ -24,6 +24,10 @@ func (s *luaState) PushString(str string) {
 	s.stack.push(str)
 }
 
+func (s *luaState) PushGoFunction(f api.GoFunction) {
+	s.stack.push(newGoClosure(f))
+}
+
 func (s *luaState) PushGoClosure(f api.GoFunction, n int) {
 	closure := newGoClosure(f)
 	for i := n; i > 0; i-- {
