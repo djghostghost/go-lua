@@ -23,9 +23,10 @@ func (s *luaState) Concat(n int) {
 				s.stack.pop()
 				s.stack.pop()
 				s.stack.push(s1 + s2)
-				continue
+
+			} else {
+				panic("concatenation error!")
 			}
-			panic("concatenation error!")
 		}
 	}
 }

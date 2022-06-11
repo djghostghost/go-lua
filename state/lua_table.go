@@ -72,7 +72,7 @@ func (t *luaTable) put(key, value luaValue) {
 
 func (t *luaTable) _shrinkArray() {
 	for i := len(t.arr) - 1; i >= 0; i-- {
-		if t.arr[i] != nil {
+		if t.arr[i] == nil {
 			t.arr = t.arr[0:i]
 		}
 	}

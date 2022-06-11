@@ -40,6 +40,14 @@ func setList(i Instruction, vm LuaVM) {
 	} else {
 		c = Instruction(vm.Fetch()).Ax()
 	}
+	bIsZero := b == 0
+
+	if bIsZero {
+		b = int(vm.ToInteger(-1)) - a - 1
+		vm.Pop(1)
+	}
+
+	vm.CheckStack(1)
 	idx := int64(c * LFIELDS_PER_FLUSH)
 	for j := 1; j <= b; j++ {
 		idx++
@@ -47,7 +55,6 @@ func setList(i Instruction, vm LuaVM) {
 		vm.SetI(a, idx)
 	}
 
-	bIsZero := b == 0
 	if bIsZero {
 		for j := vm.RegisterCount() + 1; j <= vm.GetTop(); j++ {
 			idx++

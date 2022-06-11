@@ -59,6 +59,8 @@ func (s *luaState) Arith(op ArithOp) {
 	b = s.stack.pop()
 	if op != LUA_OPUNM && op != LUA_OPBNOT {
 		a = s.stack.pop()
+	} else {
+		a = b
 	}
 
 	operator := operators[op]

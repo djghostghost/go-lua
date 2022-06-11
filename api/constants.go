@@ -33,5 +33,10 @@ const (
 const (
 	LUA_OPEQ = iota // =
 	LUA_OPLT        // <
-	LUA_OPLE        // >
+	LUA_OPLE        // <=
 )
+
+const LUA_MINSTACK = 20
+const LUA_MAXSTACK = 1000000
+const LUA_REGISTRY_INDEX = -LUA_MAXSTACK - 1000
+const LUA_RIDX_GLOABLS int64 = 2

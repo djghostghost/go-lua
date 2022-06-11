@@ -1,5 +1,7 @@
 package state
 
+import "github.com/djghostghost/go-lua/api"
+
 type luaStack struct {
 	slots []luaValue
 	top   int
@@ -8,12 +10,14 @@ type luaStack struct {
 	closure *closure
 	varargs []luaValue
 	pc      int
+	state   *luaState
 }
 
-func newLuaStack(size int) *luaStack {
+func newLuaStack(size int, state *luaState) *luaStack {
 	return &luaStack{
 		slots: make([]luaValue, size),
 		top:   0,
+		state: state,
 	}
 }
 
@@ -43,6 +47,9 @@ func (l *luaStack) pop() luaValue {
 }
 
 func (l *luaStack) absIndex(idx int) int {
+	if idx <= api.LUA_REGISTRY_INDEX {
+		return idx
+	}
 	if idx > 0 {
 		return idx
 	}
@@ -50,11 +57,17 @@ func (l *luaStack) absIndex(idx int) int {
 }
 
 func (l *luaStack) isValid(idx int) bool {
+	if idx == api.LUA_REGISTRY_INDEX {
+		return true
+	}
 	absIdx := l.absIndex(idx)
 	return absIdx > 0 && absIdx <= l.top
 }
 
 func (l *luaStack) get(idx int) luaValue {
+	if idx == api.LUA_REGISTRY_INDEX {
+		return l.state.registry
+	}
 	absIdx := l.absIndex(idx)
 	if absIdx > 0 && absIdx <= l.top {
 		return l.slots[absIdx-1]
@@ -63,6 +76,10 @@ func (l *luaStack) get(idx int) luaValue {
 }
 
 func (l *luaStack) set(idx int, val luaValue) {
+	if idx == api.LUA_REGISTRY_INDEX {
+		l.state.registry = val.(*luaTable)
+		return
+	}
 	absIdx := l.absIndex(idx)
 	if absIdx > 0 && absIdx <= l.top {
 		l.slots[absIdx-1] = val
