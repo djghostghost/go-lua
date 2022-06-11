@@ -1,11 +1,3 @@
---
--- Created by IntelliJ IDEA.
--- User: guoxiang.li
--- Date: 2020/07/03
--- Time: 20:03
--- To change this template use File | Settings | File Templates.
---
-
 local function max(...)
 
     local args = { ... }
@@ -18,10 +10,16 @@ local function max(...)
     end
     return val, idx
 end
-
 local function assert(v)
-    if not v then fail() end
+    if not v then
+        fail()
+    end
 end
-
 local v = max(3, 9, 7, 128, 35)
 assert(v == 128)
+local v2, i2 = max(3, 9, 7, 128, 35)
+assert(v2 == 128 and i2 == 4)
+local v3, i3 = max(max(3, 9, 7, 128, 35))
+assert(v3 == 128 and i3 == 1)
+local t = { max(3, 9, 7, 128, 35) }
+assert(t[1] == 128 and t[2] == 4)

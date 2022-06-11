@@ -2,7 +2,6 @@ package state
 
 import (
 	"github.com/djghostghost/go-lua/api"
-	"github.com/djghostghost/go-lua/binchunk"
 )
 
 func (s *luaState) PushNil() {
@@ -28,11 +27,16 @@ func (s *luaState) PushGoFunction(f api.GoFunction) {
 	s.stack.push(newGoClosure(f))
 }
 
+func (s *luaState) PushGlobalTable() {
+	global := s.registry.get(api.LUA_RIDX_GLOABLS)
+	s.stack.push(global)
+}
+
 func (s *luaState) PushGoClosure(f api.GoFunction, n int) {
 	closure := newGoClosure(f)
 	for i := n; i > 0; i-- {
-		val := s.stack.pop()
-		closure.upvals[n-1] = &binchunk.UpValue{&val}
+		_ = s.stack.pop()
+		//closure.upvals[n-1] = &binchunk.UpValue{&val}
 	}
 	s.stack.push(closure)
 }

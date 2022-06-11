@@ -1,6 +1,7 @@
 package state
 
 import (
+	"github.com/djghostghost/go-lua/api"
 	"github.com/djghostghost/go-lua/binchunk"
 	"github.com/djghostghost/go-lua/vm"
 )
@@ -32,7 +33,7 @@ func (s *luaState) callLuaClosure(nArgs, nResults int, c *closure) {
 	nParams := int(c.proto.NumParams)
 	isVararg := c.proto.IsVararg == 1
 
-	newStack := newLuaStack(nRegs + 20)
+	newStack := newLuaStack(nRegs+api.LUA_MINSTACK, s)
 	newStack.closure = c
 
 	funcAndArgs := s.stack.popN(nArgs + 1)
@@ -54,7 +55,7 @@ func (s *luaState) callLuaClosure(nArgs, nResults int, c *closure) {
 }
 
 func (s *luaState) callGoClosure(nArgs, nResults int, c *closure) {
-	newStack := newLuaStack(nArgs + 20)
+	newStack := newLuaStack(nArgs+20, s)
 	newStack.closure = c
 
 	args := s.stack.popN(nArgs)
