@@ -11,6 +11,7 @@ type luaStack struct {
 	varargs []luaValue
 	pc      int
 	state   *luaState
+	openuvs map[int]*upvalue
 }
 
 func newLuaStack(size int, state *luaState) *luaStack {
@@ -57,6 +58,12 @@ func (l *luaStack) absIndex(idx int) int {
 }
 
 func (l *luaStack) isValid(idx int) bool {
+	if idx < api.LUA_REGISTRY_INDEX {
+		uvIdx := api.LUA_REGISTRY_INDEX - idx - 1
+		c := l.closure
+		return c != nil && uvIdx < len(c.upvals)
+	}
+
 	if idx == api.LUA_REGISTRY_INDEX {
 		return true
 	}
@@ -65,6 +72,15 @@ func (l *luaStack) isValid(idx int) bool {
 }
 
 func (l *luaStack) get(idx int) luaValue {
+	if idx < api.LUA_REGISTRY_INDEX {
+		uvIdx := api.LUA_REGISTRY_INDEX - idx - 1
+		c := l.closure
+		if c == nil || uvIdx >= len(c.upvals) {
+			return nil
+		}
+		return *(c.upvals[uvIdx].val)
+	}
+
 	if idx == api.LUA_REGISTRY_INDEX {
 		return l.state.registry
 	}
@@ -76,6 +92,15 @@ func (l *luaStack) get(idx int) luaValue {
 }
 
 func (l *luaStack) set(idx int, val luaValue) {
+	if idx < api.LUA_REGISTRY_INDEX {
+		uvIdx := api.LUA_REGISTRY_INDEX - idx - 1
+		c := l.closure
+		if c != nil && uvIdx < len(c.upvals) {
+			*(c.upvals[uvIdx].val) = val
+		}
+		return
+	}
+
 	if idx == api.LUA_REGISTRY_INDEX {
 		l.state.registry = val.(*luaTable)
 		return

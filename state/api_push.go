@@ -24,7 +24,7 @@ func (s *luaState) PushString(str string) {
 }
 
 func (s *luaState) PushGoFunction(f api.GoFunction) {
-	s.stack.push(newGoClosure(f))
+	s.stack.push(newGoClosure(f, 0))
 }
 
 func (s *luaState) PushGlobalTable() {
@@ -33,10 +33,10 @@ func (s *luaState) PushGlobalTable() {
 }
 
 func (s *luaState) PushGoClosure(f api.GoFunction, n int) {
-	closure := newGoClosure(f)
+	closure := newGoClosure(f, 3)
 	for i := n; i > 0; i-- {
 		_ = s.stack.pop()
-		//closure.upvals[n-1] = &binchunk.UpValue{&val}
+		//closure.upvals[n-1] = &upvalue{&val}
 	}
 	s.stack.push(closure)
 }

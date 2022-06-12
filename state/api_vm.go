@@ -40,7 +40,35 @@ func (s *luaState) LoadVararg(n int) {
 }
 
 func (s *luaState) LoadProto(idx int) {
-	proto := s.stack.closure.proto.SubPrototypes[idx]
+	stack := s.stack
+	proto := stack.closure.proto.SubPrototypes[idx]
 	closure := newLuaClosure(proto)
-	s.stack.push(closure)
+	stack.push(closure)
+
+	for i, uvInfo := range proto.UpValues {
+		uvIdx := int(uvInfo.Idx)
+		if uvInfo.InStack == 1 {
+			if stack.openuvs == nil {
+				stack.openuvs = map[int]*upvalue{}
+			}
+			if openuv, found := stack.openuvs[uvIdx]; found {
+				closure.upvals[i] = openuv
+			} else {
+				closure.upvals[i] = &upvalue{&stack.slots[uvIdx]}
+				stack.openuvs[uvIdx] = closure.upvals[i]
+			}
+		} else {
+			closure.upvals[i] = stack.closure.upvals[uvIdx]
+		}
+	}
+}
+
+func (s *luaState) CloseUpvalues(a int) {
+	for i, openuv := range s.stack.openuvs {
+		if i >= a-1 {
+			val := *openuv.val
+			openuv.val = &val
+			delete(s.stack.openuvs, i)
+		}
+	}
 }
