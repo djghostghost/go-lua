@@ -3,8 +3,9 @@ package state
 import "github.com/djghostghost/go-lua/number"
 
 type luaTable struct {
-	arr  []luaValue
-	_map map[luaValue]luaValue
+	metatable *luaTable
+	arr       []luaValue
+	_map      map[luaValue]luaValue
 }
 
 func newLuaTable(nArr, nRec int) *luaTable {
