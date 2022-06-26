@@ -37,7 +37,7 @@ func setMetatable(val luaValue, mt *luaTable, ls *luaState) {
 	ls.registry.put(key, mt)
 }
 
-func getMetatable(val luaValue, ls *luaState) *luaTable {
+func getMetaTable(val luaValue, ls *luaState) *luaTable {
 	if t, ok := val.(*luaTable); ok {
 		return t.metatable
 	}
@@ -48,10 +48,10 @@ func getMetatable(val luaValue, ls *luaState) *luaTable {
 	return nil
 }
 
-func callMetamethod(a, b luaValue, mmName string, ls *luaState) (luaValue, bool) {
+func callMetaMethod(a, b luaValue, mmName string, ls *luaState) (luaValue, bool) {
 	var mm luaValue
-	if mm = getMetafield(a, mmName, ls); mm == nil {
-		if mm = getMetafield(a, mmName, ls); mm == nil {
+	if mm = getMetaField(a, mmName, ls); mm == nil {
+		if mm = getMetaField(a, mmName, ls); mm == nil {
 			return nil, false
 		}
 	}
@@ -62,4 +62,11 @@ func callMetamethod(a, b luaValue, mmName string, ls *luaState) (luaValue, bool)
 	ls.stack.push(b)
 	ls.Call(2, 1)
 	return ls.stack.pop(), true
+}
+
+func getMetaField(val luaValue, fieldName string, ls *luaState) luaValue {
+	if mt := getMetaTable(val, ls); mt != nil {
+		return mt.get(fieldName)
+	}
+	return nil
 }

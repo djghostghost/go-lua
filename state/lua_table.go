@@ -92,3 +92,7 @@ func (t *luaTable) _expandArray() {
 func (t *luaTable) len() int {
 	return len(t.arr)
 }
+
+func (t *luaTable) hasMetaField(fieldName string) bool {
+	return t.metatable != nil && t.metatable.get(fieldName) != nil
+}

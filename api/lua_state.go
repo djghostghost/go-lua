@@ -73,6 +73,15 @@ type LuaState interface {
 	Register(name string, f GoFunction)
 
 	PushGoClosure(f GoFunction, n int)
+
+	GetMetaTable(idx int) bool
+	SetMetaTable(idx int)
+	RawLen(idx int) uint
+	RawEqual(idx1 int, idx2 int) bool
+	RawGet(idx int) LuaType
+	RawSet(idx int)
+	RawGetI(idx int, i int64) LuaType
+	RawSetI(idx int, i int64)
 }
 
 type GoFunction func(LuaState) int

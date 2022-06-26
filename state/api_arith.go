@@ -70,7 +70,7 @@ func (s *luaState) Arith(op ArithOp) {
 		return
 	}
 	mm := operator.metaMethod
-	if result, ok := callMetamethod(a, b, mm, s); ok {
+	if result, ok := callMetaMethod(a, b, mm, s); ok {
 		s.stack.push(result)
 		return
 	}
