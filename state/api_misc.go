@@ -50,5 +50,20 @@ func (s *luaState) RawLen(idx int) uint {
 	default:
 		return 0
 	}
+}
 
+func (s *luaState) Next(idx int) bool {
+	val := s.stack.get(idx)
+
+	if t, ok := val.(*luaTable); ok {
+		key := s.stack.pop()
+		if nextKey := t.nextKey(key); nextKey != nil {
+			s.stack.push(nextKey)
+			s.stack.push(t.get(nextKey))
+			return true
+		} else {
+			return false
+		}
+	}
+	panic("table expected!")
 }
