@@ -1,7 +1,6 @@
 package vm
 
 import (
-	"fmt"
 	"github.com/djghostghost/go-lua/api"
 )
 
@@ -51,7 +50,7 @@ func (i Instruction) CMode() byte {
 
 func (i Instruction) Execute(vm api.LuaVM) {
 	op := opcodes[i.OpCode()]
-	fmt.Printf("Execute code %s\n", op.name)
+	//fmt.Printf("Execute code %s\n", op.name)
 	action := op.action
 
 	if action != nil {
