@@ -40,3 +40,14 @@ const LUA_MINSTACK = 20
 const LUA_MAXSTACK = 1000000
 const LUA_REGISTRY_INDEX = -LUA_MAXSTACK - 1000
 const LUA_RIDX_GLOABLS int64 = 2
+
+const (
+	LuaOK = iota
+	LuaYield
+	LuaErrRun
+	LuaErrSyntax
+	LuaErrMem
+	LuaErrGcMM
+	LuaErrErr
+	LuaErrFile
+)
