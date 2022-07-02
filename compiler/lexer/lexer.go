@@ -1,11 +1,24 @@
 package lexer
 
 import (
+	"bytes"
+	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
 const EOF = "EOF"
+
+var reOpeningLongBracket = regexp.MustCompile(`^\[=*\[`)
+
+var reIdentifier = regexp.MustCompile(`^[_\d\w]+`)
+var reNumber = regexp.MustCompile(`^0[xX][0-9a-fA-F]*(\.[0-9a-fA-F]*)?([pP][+\-]?[0-9]+)?|^[0-9]*(\.[0-9]*)?([eE][+\-]?[0-9]+)?`)
+var reShortStr = regexp.MustCompile(`(?s)(^'(\\\\|\\'|\\\n|\\z\s*|[^'\n])*')|(^"(\\\\|\\"|\\\n|\\z\s*|[^"\n])*")`)
+
+var reDecEscapeSeq = regexp.MustCompile(`^\\[0-9]{1,3}`)
+var reHexEscapeSeq = regexp.MustCompile(`^\\x[0-9a-fA-F]{2}`)
+var reUnicodeEscapeSeq = regexp.MustCompile(`^\\u\{[0-9a-fA-F]+\}`)
 
 type Lexer struct {
 	chunk     string
@@ -143,6 +156,11 @@ func (l *Lexer) NextToken() (line, kind int, token string) {
 		return l.line, TokenString, l.scanShortString()
 	}
 
+	c := l.chunk[0]
+	if c == '.' || isDigit(c) {
+
+	}
+
 }
 
 func (l *Lexer) skipWhiteSpaces() {
@@ -162,8 +180,6 @@ func (l *Lexer) skipWhiteSpaces() {
 		}
 	}
 }
-
-var reOpeningLongBracket = regexp.MustCompile(`^\[=*\[`)
 
 func (l *Lexer) skipComment() {
 	l.next(2) // skip --
@@ -185,6 +201,157 @@ func (l *Lexer) test(str string) bool {
 
 func (l *Lexer) next(n int) {
 	l.chunk = l.chunk[n:]
+}
+
+var reNewLine = regexp.MustCompile("\r\n|\n\r|\n\r")
+
+func (l *Lexer) scanLongString() string {
+	openingLongBracket := reOpeningLongBracket.FindString(l.chunk)
+	if openingLongBracket == "" {
+		l.error("invalid long string delimiter near '%s", l.chunk[0:2])
+	}
+
+	closingLongBracket := strings.Replace(openingLongBracket, "[", "]", -1)
+	closingBracketIndex := strings.Index(l.chunk, closingLongBracket)
+
+	if closingBracketIndex < 0 {
+		l.error("unfinished long string or comment")
+	}
+
+	str := l.chunk[len(openingLongBracket):closingBracketIndex]
+	l.next(closingBracketIndex + len(closingLongBracket))
+
+	str = reNewLine.ReplaceAllString(str, "\n")
+	l.line += strings.Count(str, "\n")
+
+	i := 0
+	for ; i < len(str); i++ {
+		if str[i] != '\n' {
+			break
+		}
+	}
+
+	if i != 0 {
+		str = str[i:]
+	}
+	return str
+}
+
+func (l *Lexer) scanShortString() string {
+	if str := reShortStr.FindString(l.chunk); str != "" {
+		l.next(len(str))
+		str = str[1 : len(str)-1]
+		if strings.Index(str, `n`) >= 0 {
+			l.line += len(reNewLine.FindAllString(str, -1))
+			str = l.escape(str)
+		}
+		return str
+	}
+	l.error("unfinished string")
+	return ""
+}
+
+func (l *Lexer) error(f string, a ...interface{}) {
+	err := fmt.Sprintf(f, a)
+	err = fmt.Sprintf("%s:%d: %s", l.chunkName, l.line, err)
+	panic(err)
+}
+
+func (l *Lexer) escape(str string) string {
+	buf := bytes.Buffer{}
+	for len(str) > 0 {
+
+		if str[0] != '\\' {
+			buf.WriteByte(str[0])
+			str = str[1:]
+			continue
+		}
+		if len(str) == 1 {
+			l.error("unfinished string")
+		}
+
+		switch str[1] {
+		case 'a':
+			buf.WriteByte('\a')
+			str = str[2:]
+			continue
+		case 'b':
+			buf.WriteByte('\b')
+			str = str[2:]
+			continue
+		case 'f':
+			buf.WriteByte('\f')
+			str = str[2:]
+			continue
+		case 'n':
+			buf.WriteByte('\n')
+			str = str[2:]
+			continue
+		case '\n':
+			buf.WriteByte('\n')
+			str = str[2:]
+			continue
+		case 'r':
+			buf.WriteByte('\r')
+			str = str[2:]
+			continue
+		case 't':
+			buf.WriteByte('\t')
+			str = str[2:]
+			continue
+		case 'v':
+			buf.WriteByte('\v')
+			str = str[2:]
+			continue
+		case '"':
+			buf.WriteByte('"')
+			str = str[2:]
+			continue
+		case '\'':
+			buf.WriteByte('\'')
+			str = str[2:]
+			continue
+		case '\\':
+			buf.WriteByte('\\')
+			str = str[2:]
+			continue
+		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+			if found := reDecEscapeSeq.FindString(str); found != "" {
+				d, _ := strconv.ParseInt(found[1:], 10, 32)
+				if d <= 0xFF {
+					buf.WriteByte(byte(d))
+					str = str[len(found):]
+					continue
+				}
+				l.error("decimal escape too large near '%s'", found)
+			}
+		case 'x':
+			if found := reHexEscapeSeq.FindString(str); found != "" {
+				d, _ := strconv.ParseInt(found[2:], 16, 32)
+				buf.WriteByte(byte(d))
+				str = str[len(found):]
+				continue
+			}
+		case 'u':
+			if found := reUnicodeEscapeSeq.FindString(str); found != "" {
+				d, err := strconv.ParseInt(found[3:len(found)-1], 16, 32)
+				if err == nil && d < 0x10FFFF {
+					buf.WriteRune(rune(d))
+					str = str[len(found):]
+					continue
+				}
+				l.error("UTF-8 value too large near '%s'", found)
+			}
+		case 'z':
+			str = str[2:]
+			for len(str) > 0 && isWhiteSpace(str[0]) {
+				str = str[1:]
+			}
+			continue
+		}
+
+	}
+	return buf.String()
 }
 
 var WhiteSpace = map[byte]bool{
