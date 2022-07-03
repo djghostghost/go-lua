@@ -24,6 +24,10 @@ type Lexer struct {
 	chunk     string
 	chunkName string
 	line      int
+
+	nextToken     string
+	nextTokenKind int
+	nextTokenLine int
 }
 
 func NewLexer(chunk string, chunkName string) *Lexer {
@@ -158,9 +162,29 @@ func (l *Lexer) NextToken() (line, kind int, token string) {
 
 	c := l.chunk[0]
 	if c == '.' || isDigit(c) {
-
+		token := l.scanNumber()
+		return l.line, TokenNumber, token
 	}
 
+	if c == '_' || isLatter(c) {
+		token := l.scanIdentifier()
+		if kind, found := KeyWordsMap[token]; found {
+			return l.line, kind, token
+		} else {
+			return l.line, TokenIdentifier, token
+		}
+	}
+
+	if l.nextTokenLine > 0 {
+		line = l.nextTokenLine
+		kind = l.nextTokenKind
+		token = l.nextToken
+		l.line = l.nextTokenLine
+		l.nextTokenLine = 0
+		return
+	}
+	l.error("unexpected symbol near %q", c)
+	return
 }
 
 func (l *Lexer) skipWhiteSpaces() {
@@ -249,6 +273,10 @@ func (l *Lexer) scanShortString() string {
 	}
 	l.error("unfinished string")
 	return ""
+}
+
+func (l *Lexer) scanIdentifier() string {
+	return l.scan(reIdentifier)
 }
 
 func (l *Lexer) error(f string, a ...interface{}) {
@@ -373,4 +401,50 @@ func isNewLine(c byte) bool {
 
 func isDigit(c byte) bool {
 	return c >= '0' && c <= '9'
+}
+
+func (l *Lexer) scan(re *regexp.Regexp) string {
+	if token := re.FindString(l.chunk); token != "" {
+		l.next(len(token))
+		return token
+	}
+	panic("unreachable")
+}
+
+func (l *Lexer) scanNumber() string {
+	return l.scan(reNumber)
+}
+
+func isLatter(c byte) bool {
+	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
+}
+
+func (l *Lexer) LookAhead() int {
+	if l.nextTokenLine > 0 {
+		return l.nextTokenKind
+	}
+
+	currentLine := l.line
+	line, kind, token := l.NextToken()
+	l.line = currentLine
+	l.nextToken = token
+	l.nextTokenKind = kind
+	l.nextTokenLine = line
+	return kind
+}
+
+func (l *Lexer) NextTokenOfKind(kind int) (line int, token string) {
+	line, _kind, token := l.NextToken()
+	if kind != _kind {
+		l.error("syntax error near '%s'", token)
+	}
+	return line, token
+}
+
+func (l *Lexer) NextIdentifier() (line int, token string) {
+	return l.NextTokenOfKind(TokenIdentifier)
+}
+
+func (l *Lexer) Line() int {
+	return l.line
 }
